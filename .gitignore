@@ -4,3 +4,6 @@
 # Ada Library Information
 *.ali
 .Rproj.user
+
+# Hide RMarkdown
+/Analysis/THF/*.html
