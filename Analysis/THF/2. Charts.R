@@ -59,6 +59,7 @@ SPL_by_CCG <- fread(paste0(popdatadir,"SPL/England/November/","Coronavirus Shiel
 #Other open data (summary tables)
 SPL_by_GOR_wEng <- fread(paste0(graphsdir,"SPL_by_GOR_wEng (October).csv"), header=TRUE, sep=",", check.names=T)
 LiverpoolWirral_depquint <- fread(paste0(rawdatadir,"opendata-demographics.csv"), header=TRUE, sep=",", check.names=T)
+LiverpoolWirral_agedepquint <- fread(paste0(rawdatadir,"opendata-demographics-interactions.csv"), header=TRUE, sep=",", check.names=T)
 
 ###############################################
 ################### Shielding rate ############
@@ -545,6 +546,47 @@ imd_age_chart
 
 ggsave(paste0(graphsdir,"imd_age_chart.png"), imd_age_chart, device="png",width = 25, height = 8,dpi=600)
 fwrite(age_imd_data_small, file = paste0(graphsdir,"data for charts/age_imd_data_small.csv"), sep = ",")
+
+#############################################################
+################### IMD/SIMD vs. Age (Open Data) ############
+#############################################################
+
+  #Prepate data for comparions
+opendata_comparison_bis <- filter(age_imd_data_full,Partner=="LiverpoolWirral")
+
+  #Change naming conventions
+LiverpoolWirral_agedepquint$ageband <- str_replace_all(LiverpoolWirral_agedepquint$ageband,"to","-")
+LiverpoolWirral_agedepquint$ageband <- str_replace_all(LiverpoolWirral_agedepquint$ageband,"plus","+")
+LiverpoolWirral_agedepquint <- dplyr::rename(LiverpoolWirral_agedepquint,
+                                            var1.level=ageband,
+                                            var2.level=IMDQuintile,
+                                            interaction_rate_v1=rate_over_age)
+LiverpoolWirral_agedepquint$Partner <- "LiverpoolWirral-ONS"
+
+  #Append datasets
+opendata_comparison_bis <- rbind.fill(opendata_comparison_bis,LiverpoolWirral_agedepquint)
+
+  #Chart
+cols6 <- c(brewer.pal(n = 5, name = "RdYlGn"),"#bdbdbd")
+age_dep_open <- ggplot(opendata_comparison_bis,
+                        aes(x=factor(var1.level),
+                            y = interaction_rate_v1,
+                            fill=factor(var2.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 10),
+        axis.text = element_text(size = 10),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="Age group") +
+  scale_fill_manual(values=cols6) +
+  guides(fill=guide_legend(title="IMD quintile"))
+
+windows()
+age_dep_open
 
 ####################################################
 ################### Reason vs. IMD/SIMD ############
