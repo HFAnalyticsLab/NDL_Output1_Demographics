@@ -58,7 +58,8 @@ SPL_by_CCG <- fread(paste0(popdatadir,"SPL/England/November/","Coronavirus Shiel
 
 #Other open data (summary tables)
 SPL_by_GOR_wEng <- fread(paste0(graphsdir,"SPL_by_GOR_wEng (October).csv"), header=TRUE, sep=",", check.names=T)
-  
+LiverpoolWirral_depquint <- fread(paste0(rawdatadir,"opendata-demographics.csv"), header=TRUE, sep=",", check.names=T)
+
 ###############################################
 ################### Shielding rate ############
 ###############################################
@@ -252,6 +253,43 @@ rural_chart
 
 ggsave(paste0(graphsdir,"rural_chart.png"), rural_chart, device="png",width = 15, height = 8,dpi=600)
 fwrite(urbanrural_data_full, file = paste0(graphsdir,"data for charts/urbanrural_data_full.csv"), sep = ",")
+
+################################################################
+################### Deprivation in Liverpool-Wirral ############
+################################################################
+
+deprivation_ndl_lpool <- filter(allpartners.demographics.clean,Breakdown_Field=="imd"&
+                                        Partner=="LiverpoolWirral") %>%
+  select(.,Partner,Breakdown_Value,rate_all)
+
+LiverpoolWirral_depquint <- LiverpoolWirral_depquint %>%
+  rename(.,Breakdown_Value=IMDQuintile,rate_all=rate) %>%
+  select(.,Breakdown_Value,rate_all) %>%
+  mutate(.,Partner="LiverpoolWirral-ONS")
+
+deprivation_ndl_lpool <- rbind.fill(deprivation_ndl_lpool,LiverpoolWirral_depquint)
+
+cols6 <- c(brewer.pal(n = 5, name = "RdYlGn"),"#bdbdbd")
+
+by_deplpool_chart <- ggplot(deprivation_ndl_lpool,
+                       aes(x=factor(Partner), y = rate_all,fill=factor(Breakdown_Value))) +
+  geom_bar(stat="identity",position="dodge") +
+  geom_text(aes(label=paste0(round(rate_all,0),"%"),y=(rate_all+2)),size=6,angle = 45,hjust=0.5,vjust=0,colour="red",position = position_dodge(.9)) +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(size = 30),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm")))  +
+  labs(title="%",y = " ",x="Partner") +
+  scale_colour_manual(
+    values = cols6,
+    aesthetics = c("colour", "fill")) +
+  guides(fill=guide_legend(title="Deprivation (IMD)"))
+
+windows()
+by_deplpool_chart
 
 ############################################
 ################### Deprivation ############
