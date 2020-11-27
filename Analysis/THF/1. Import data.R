@@ -2,6 +2,8 @@
 ################### TO-DO ####################
 ##############################################
 
+#Interaction totals can be done with merging rather than manually
+
 #Add known total column, for some variables it's uncertain due to SDC
 #Excel needs a QA for both partners
 #Each interaction TABLE has a fixed total and total.know
@@ -121,7 +123,7 @@ all_partners_under30 <- all_partners_under30[, list(Breakdown_Value="0-29", Coun
 
 all_partners <- rbind.fill(all_partners,all_partners_under30)
 
-filter(all_partners,Breakdown_Field=="age_band")
+#filter(all_partners,Breakdown_Field=="age_band")
 
 ### Append all
 
@@ -156,8 +158,10 @@ all_partners_clean <- all_partners_and_open %>% filter(.,!str_detect(Breakdown_V
 ### Compute rates
 
 all_partners_clean <- all_partners_clean %>% mutate(Count = gsub("\\*", "", Count)) %>%
-  mutate(.,Count=as.numeric(Count)) %>%
-  mutate(.,rate_all=Count/n*100,rate_known=Count/n_known*100)
+  mutate(.,Count=as.numeric(Count),n=as.numeric(n),n_known=as.numeric(n_known),
+         var1.n=as.numeric(var1.n),var2.n=as.numeric(var2.n)) %>%
+  mutate(.,rate_all=Count/n*100,rate_known=Count/n_known*100) %>%
+  mutate(.,interaction_rate_v1=Count/var1.n*100,interaction_rate_v2=Count/var2.n*100)
 
 ##########################################
 ################### Save #################

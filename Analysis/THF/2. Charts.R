@@ -2,6 +2,9 @@
 ################### DEVELOPMENT IDEAS ####################
 ##########################################################
 
+##Present initial findings in an RMardown
+##Using plotly to enable hovering over values
+
 ##############################################
 ################### SETUP ####################
 ##############################################
@@ -9,7 +12,7 @@
 #Load packages
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(dplyr,stringr,sp,ggplot2,plyr,readODS,
-               gmodels,Rmisc,DescTools,data.table,
+               gmodels,Rmisc,DescTools,data.table,readxl,
                Hmisc,tibble,leaflet,rgeos,raster,plotly,
                pbapply,pbmcapply,here,rgdal,RColorBrewer,ggthemes,
                ggchicklet,tidyverse,showtext,ggchicklet)
@@ -108,10 +111,12 @@ rate_by_partner_chart <- ggplot(rate_by_partner_chart_data) +
 windows()
 rate_by_partner_chart
 
+ggplotly(rate_by_partner_chart)
+
 #Save chart
 
 ggsave(paste0(graphsdir,"rate_by_partner_chart.png"), rate_by_partner_chart, device="png",width = 12, height = 7,dpi=500)
-fwrite(rate_by_partner_chart_data, file = paste0(graphsdir,"rate_by_partner_chart_data.csv"), sep = ",")
+fwrite(rate_by_partner_chart_data, file = paste0(graphsdir,"data for charts/rate_by_partner_chart_data.csv"), sep = ",")
 
 ###############################################
 ################### Age band chart ############
@@ -147,7 +152,7 @@ by_age_band_chart
 #Save chart
 
 ggsave(paste0(graphsdir,"by_age_band_chart.png"), by_age_band_chart, device="png",width = 15, height = 8,dpi=600)
-fwrite(age_band_chart_data_full, file = paste0(graphsdir,"age_band_chart_data.csv"), sep = ",")
+fwrite(age_band_chart_data_full, file = paste0(graphsdir,"data for charts/age_band_chart_data.csv"), sep = ",")
 
 #############################################
 ################### Gender chart ############
@@ -180,7 +185,7 @@ by_sex_chart
 #Save chart
 
 ggsave(paste0(graphsdir,"by_sex_chart.png"), by_sex_chart, device="png",width = 15, height = 8,dpi=600)
-fwrite(sex_chart_data_full, file = paste0(graphsdir,"sex_chart_data_full.csv"), sep = ",")
+fwrite(sex_chart_data_full, file = paste0(graphsdir,"data for charts/sex_chart_data_full.csv"), sep = ",")
 
 #####################################################
 ################### Reason for shielding ############
@@ -213,7 +218,7 @@ by_reason_chart
 #Save chart
 
 ggsave(paste0(graphsdir,"by_reason_chart.png"), by_reason_chart, device="png",width = 15, height = 8,dpi=600)
-fwrite(reason_chart_data, file = paste0(graphsdir,"reason_chart_data.csv"), sep = ",")
+fwrite(reason_chart_data, file = paste0(graphsdir,"data for charts/reason_chart_data.csv"), sep = ",")
 
 ##############################################
 ################### Urban / Rural ############
@@ -246,7 +251,7 @@ rural_chart
 #Save chart
 
 ggsave(paste0(graphsdir,"rural_chart.png"), rural_chart, device="png",width = 15, height = 8,dpi=600)
-fwrite(urbanrural_data_full, file = paste0(graphsdir,"urbanrural_data_full.csv"), sep = ",")
+fwrite(urbanrural_data_full, file = paste0(graphsdir,"data for charts/urbanrural_data_full.csv"), sep = ",")
 
 ############################################
 ################### Deprivation ############
@@ -279,7 +284,7 @@ by_dep_chart
 #Save chart
 
 ggsave(paste0(graphsdir,"by_dep_chart.png"), by_dep_chart, device="png",width = 15, height = 8,dpi=600)
-fwrite(deprivation_chart_data_full, file = paste0(graphsdir,"deprivation_chart_data_full.csv"), sep = ",")
+fwrite(deprivation_chart_data_full, file = paste0(graphsdir,"data for charts/deprivation_chart_data_full.csv"), sep = ",")
 
 ##########################################
 ################### Ethnicity ############
@@ -312,7 +317,7 @@ ethnicity_chart
 #Save chart
 
 ggsave(paste0(graphsdir,"ethnicity_chart.png"), ethnicity_chart, device="png",width = 15, height = 8,dpi=600)
-fwrite(ethnicity_chart_data_full, file = paste0(graphsdir,"ethnicity_chart_data_full.csv"), sep = ",")
+fwrite(ethnicity_chart_data_full, file = paste0(graphsdir,"data for charts/ethnicity_chart_data_full.csv"), sep = ",")
 
 ###################################################
 ################### Method of addition ############
@@ -341,7 +346,7 @@ method_addition_chart
 #Save chart
 
 ggsave(paste0(graphsdir,"method_addition_chart.png"), method_addition_chart, device="png",width = 15, height = 8,dpi=600)
-fwrite(method_addition_data, file = paste0(graphsdir,"method_addition_data.csv"), sep = ",")
+fwrite(method_addition_data, file = paste0(graphsdir,"data for charts/method_addition_data.csv"), sep = ",")
 
 ###############################################
 ################### Multimorbidity ############
@@ -374,4 +379,253 @@ method_addition_chart
 #Save chart
 
 ggsave(paste0(graphsdir,"number_conditions_chart.png"), number_conditions_chart, device="png",width = 15, height = 8,dpi=600)
-fwrite(number_conditions_data, file = paste0(graphsdir,"number_conditions_data.csv"), sep = ",")
+fwrite(number_conditions_data, file = paste0(graphsdir,"data for charts/number_conditions_data.csv"), sep = ",")
+
+#################################################
+################### Sex vs. IMD/SIMD ############
+#################################################
+
+sex_imd_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="imd_sex"&
+                              var2.level!="unknown/other")
+
+sex_imd_data_small <- select(sex_imd_data_full,Partner,var1,var2,
+                             var1.level,var2.level,rate_all,rate_known,interaction_rate_v1,interaction_rate_v2,n,n_known) %>%
+  mutate(.,across(where(is.numeric), round, 1))
+
+filter(sex_imd_data_full,Partner=="GrampianAberdeen"&var1.level=="1")
+sum(filter(sex_imd_data_full,Partner=="GrampianAberdeen"&var1.level=="1")$interaction_rate_v1)
+
+by_sex_imd_chart <- ggplot(sex_imd_data_full,
+                           aes(x=factor(var1.level),
+                               y = interaction_rate_v1,
+                               fill=factor(var2.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  geom_text(aes(label=paste0(round(interaction_rate_v1,0),"%"),y=(interaction_rate_v1+2)),size=6,angle = 45,hjust=0.5,vjust=0,colour="red",position = position_dodge(.9)) +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(size = 30),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="IMD/SIMD quintile") +
+  guides(fill=guide_legend(title="Sex"))
+
+windows()
+by_sex_imd_chart
+
+#Save chart
+
+ggsave(paste0(graphsdir,"by_sex_imd_chart.png"), by_sex_imd_chart, device="png",width = 15, height = 8,dpi=600)
+fwrite(sex_imd_data_small, file = paste0(graphsdir,"data for charts/sex_imd_data_small.csv"), sep = ",")
+
+#################################################
+################### Age vs. IMD/SIMD ############
+#################################################
+
+age_imd_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="age_band_imd") %>%
+  filter(.,var1.level %in% c("0-19","20-29","30-39","40-49","50-59","60-69","70-79","80+")) %>%
+  filter(.,!(var2.level=="unknown"&Partner=="LiverpoolWirral"))
+
+age_imd_data_small <- select(age_imd_data_full,Partner,var1,var2,
+         var1.level,var2.level,rate_all,rate_known,interaction_rate_v1,interaction_rate_v2,n,n_known) %>%
+  mutate(.,across(where(is.numeric), round, 1))
+
+filter(age_imd_data_full,Partner=="LiverpoolWirral"&var2.level=="unknown")
+filter(age_imd_data_full,Partner=="GrampianAberdeen"&var2.level=="1")
+sum(filter(age_imd_data_full,Partner=="GrampianAberdeen"&var2.level=="1")$interaction_rate_v2)
+
+cols8 <- brewer.pal(n = 9, name = "BuPu")[2:9]
+
+age_imd_chart <- ggplot(age_imd_data_full,
+                           aes(x=factor(var2.level),
+                               y = interaction_rate_v2,
+                               fill=factor(var1.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(size = 30),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="IMD/SIMD quintile") +
+  scale_colour_manual(
+    values = cols8,
+    aesthetics = c("colour", "fill")) +
+  guides(fill=guide_legend(title="Age"))
+
+windows()
+age_imd_chart
+
+#Save chart
+
+ggsave(paste0(graphsdir,"age_imd_chart.png"), age_imd_chart, device="png",width = 25, height = 8,dpi=600)
+fwrite(age_imd_data_small, file = paste0(graphsdir,"data for charts/age_imd_data_small.csv"), sep = ",")
+
+#################################################
+################### IMD/SIMD vs. Age ############
+#################################################
+
+age_imd_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="age_band_imd") %>%
+  filter(.,var1.level %in% c("0-19","20-29","30-39","40-49","50-59","60-69","70-79","80+"))
+
+age_imd_data_small <- select(age_imd_data_full,Partner,var1,var2,
+                             var1.level,var2.level,rate_all,rate_known,interaction_rate_v1,interaction_rate_v2,n,n_known) %>%
+  mutate(.,across(where(is.numeric), round, 1))
+
+cols6 <- c(brewer.pal(n = 5, name = "RdYlGn"),"#bdbdbd")
+
+filter(age_imd_data_full,Partner=="LiverpoolWirral"&var1.level=="80+")
+sum(filter(age_imd_data_full,Partner=="LiverpoolWirral"&var1.level=="80+")$interaction_rate_v1)
+
+imd_age_chart <- ggplot(age_imd_data_full,
+                        aes(x=factor(var1.level),
+                            y = interaction_rate_v1,
+                            fill=factor(var2.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(size = 30),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="Age group") +
+  scale_colour_manual(
+    values = cols6,
+    aesthetics = c("colour", "fill")) +
+  guides(fill=guide_legend(title="IMD/SIMD quintile"))
+
+windows()
+imd_age_chart
+
+#Save chart
+
+ggsave(paste0(graphsdir,"imd_age_chart.png"), imd_age_chart, device="png",width = 25, height = 8,dpi=600)
+fwrite(age_imd_data_small, file = paste0(graphsdir,"data for charts/age_imd_data_small.csv"), sep = ",")
+
+####################################################
+################### Reason vs. IMD/SIMD ############
+####################################################
+
+reason_imd_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="imd_shielding_reason") %>%
+  filter(.,var2.level!="unknown")
+
+reason_imd_data_small <- select(reason_imd_data_full,Partner,var1,var2,
+                             var1.level,var2.level,rate_all,rate_known,interaction_rate_v1,interaction_rate_v2,n,n_known) %>%
+  mutate(.,across(where(is.numeric), round, 1))
+
+filter(reason_imd_data_full,Partner=="GrampianAberdeen"&var1.level=="1")
+sum(filter(reason_imd_data_full,Partner=="GrampianAberdeen"&var1.level=="1")$interaction_rate_v1)
+
+reason_imd_chart <- ggplot(reason_imd_data_full,
+                        aes(x=factor(var1.level),
+                            y = interaction_rate_v1,
+                            fill=factor(var2.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(size = 30),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="IMD/SIMD quintile")  +
+  guides(fill=guide_legend(title="Reason for shielding"))
+
+windows()
+reason_imd_chart
+
+#Save chart
+
+ggsave(paste0(graphsdir,"reason_imd_chart.png"), reason_imd_chart, device="png",width = 25, height = 8,dpi=600)
+fwrite(reason_imd_data_small, file = paste0(graphsdir,"data for charts/reason_imd_data_small.csv"), sep = ",")
+
+###############################################
+################### Reason vs. Age ############
+###############################################
+
+reason_age_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="age_band_shielding_reason"&
+                                 var1.level!="unknown"&var2.level!="unknown")
+
+reason_age_data_small <- select(reason_age_data_full,Partner,var1,var2,
+                                var1.level,var2.level,rate_all,rate_known,interaction_rate_v1,interaction_rate_v2,n,n_known) %>%
+  mutate(.,across(where(is.numeric), round, 1))
+
+filter(reason_age_data_full,Partner=="GrampianAberdeen"&var2.level=="80+")
+sum(filter(reason_age_data_full,Partner=="GrampianAberdeen"&var2.level=="80+")$interaction_rate_v2)
+
+reason_age_chart <- ggplot(reason_age_data_full,
+                           aes(x=factor(var2.level),
+                               y = interaction_rate_v2,
+                               fill=factor(var1.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(size = 30),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="Age")  +
+  guides(fill=guide_legend(title="Reason for shielding"))
+
+windows()
+reason_age_chart
+
+#Save chart
+
+ggsave(paste0(graphsdir,"reason_age_chart.png"), reason_age_chart, device="png",width = 25, height = 8,dpi=600)
+fwrite(reason_age_data_small, file = paste0(graphsdir,"data for charts/reason_age_data_small.csv"), sep = ",")
+
+############################################
+################### Sex vs. Age ############
+############################################
+
+sex_age_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="age_band_sex"&
+                              var2.level!="unknown/other"&
+                              var1.level!="unknown")
+
+sex_age_data_small <- select(sex_age_data_full,Partner,var1,var2,
+                                var1.level,var2.level,rate_all,rate_known,interaction_rate_v1,interaction_rate_v2,n,n_known) %>%
+  mutate(.,across(where(is.numeric), round, 1))
+
+filter(sex_age_data_full,Partner=="GrampianAberdeen"&var2.level=="male")
+sum(filter(sex_age_data_full,Partner=="GrampianAberdeen"&var2.level=="male")$interaction_rate_v2)
+
+cols8 <- brewer.pal(n = 9, name = "BuPu")[2:9]
+
+sex_age_chart <- ggplot(sex_age_data_full,
+                           aes(x=factor(var2.level),
+                               y = interaction_rate_v2,
+                               fill=factor(var1.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(size = 30),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="Sex")  +
+  scale_colour_manual(
+    values = cols8,
+    aesthetics = c("colour", "fill")) +
+  guides(fill=guide_legend(title="Age"))
+
+windows()
+sex_age_chart
+
+ggplotly(sex_age_chart)
+
+#Save chart
+
+ggsave(paste0(graphsdir,"sex_age_chart.png"), sex_age_chart, device="png",width = 25, height = 8,dpi=600)
+fwrite(sex_age_data_small, file = paste0(graphsdir,"data for charts/sex_age_data_small.csv"), sep = ",")
