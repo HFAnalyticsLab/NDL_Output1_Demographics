@@ -59,6 +59,26 @@ pop_by_scottish_board <- read_excel(paste0(popdatadir,"Other data/Mid-year popul
 all_partners <- read_excel(paste0(rawdatadir,"allpartners-demographics.xlsx"),
                            sheet = 1)
 
+#####################################################################
+################### Merge in totals for interaction #################
+#####################################################################
+
+#Merge var.1level to 
+
+aux.totals.one <- filter(all_partners,interaction==0) %>% 
+  select(.,"Partner","Breakdown_Field","Breakdown_Value","Count") %>%
+  dplyr::rename(.,var1=Breakdown_Field,var1.level=Breakdown_Value,var1.n=Count)
+
+aux.totals.two <- filter(all_partners,interaction==0) %>% 
+  select(.,"Partner","Breakdown_Field","Breakdown_Value","Count") %>%
+  dplyr::rename(.,var2=Breakdown_Field,var2.level=Breakdown_Value,var2.n=Count)
+
+all_partners <- left_join(all_partners,aux.totals.one,by=c("Partner","var1","var1.level")) %>%
+  left_join(.,aux.totals.two,by=c("Partner","var2","var2.level"))
+
+filter(all_partners,interaction==0) %>%
+  select(.,Partner,Breakdown_Field,var1,var2,var1.level,var2.level,var1.n,var2.n)
+
 ######################################################
 ################### Append Open data #################
 ######################################################

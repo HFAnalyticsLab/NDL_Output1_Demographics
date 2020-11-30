@@ -76,7 +76,7 @@ pct_shielding_liverpool_wirral_opendata <- pop_shielding_liverpool_wirral_openda
   #Grampian-Aberdeen
 pop_grampian <- pop_by_scottish_board %>% filter(., `NHS Board areas` %in% c("Grampian")) %>%
   select(.,`...3`) %>% as.numeric()
-pop_shielding_grampian_NDL <- allpartners.demographics.clean %>% filter(.,Partner=="GrampianAberdeen") %>% select(.,n) %>% min(.,na.rm=TRUE)
+pop_shielding_grampian_NDL <- 14773
 pct_shielding_grampian_NDL <- pop_shielding_grampian_NDL/pop_grampian*100
 
   #Chart data
