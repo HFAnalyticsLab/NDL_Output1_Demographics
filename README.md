@@ -41,7 +41,7 @@ The repository contains the following folders:
 
 ### Requirements
 
-These scripts were written in R version (to be added) and RStudio Version 1.1.383. 
+These scripts were written in R version 4.0.2 and RStudio Version 1.1.383. 
 The following R packages (available on CRAN) are needed: 
 * [**tidyverse**](https://www.tidyverse.org/)
 * **ggplot2**
