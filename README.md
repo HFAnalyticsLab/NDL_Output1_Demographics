@@ -59,4 +59,4 @@ The following R packages (available on CRAN) are needed:
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the [MIT License](https://github.com/HFAnalyticsLab/NDL_Output1_Demographics/blob/main/LICENSE).
