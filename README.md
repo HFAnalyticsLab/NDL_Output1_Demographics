@@ -34,20 +34,20 @@ This analysis relies on the following data sources, which have been accessed by 
 
 The repository contains the following folders:
 
-- Extraction: this contains summaries from each partner on how they extracted their data and defined their cohorts.
-- Standardization and cleaning: this contains .R code from each partner to clean data and create the required variables for this analysis (e.g. age bands). The goal is to make the five datasets as similar to each other as possible.
-- Analysis: this contains the .R code used by each partner for their analyses, using clean data to produce summary statistic tables on patient demographics. This folder also includes the code used by The Health Foundation (THF) to aggregate and analyse the five sets of results.
-- Outputs: this contains the final outputs from each of the parnters (after applying statistical disclosure control methods).
+- **Extraction:** this contains summaries from each partner on how they extracted their data and defined their cohorts.
+- **Standardization and cleaning:** this contains .R code from each partner to clean data and create the required variables for this analysis (e.g. age bands). The goal is to make the five datasets as similar to each other as possible.
+- **Analysis:** this contains the .R code used by each partner for their analyses, using clean data to produce summary statistic tables on patient demographics. This folder also includes the code used by The Health Foundation (THF) to aggregate and analyse the five sets of results.
+- **Outputs:** this contains the final outputs from each of the parnters (after applying statistical disclosure control methods).
 
 ### Requirements
 
 These scripts were written in R version (to be added) and RStudio Version 1.1.383. 
 The following R packages (available on CRAN) are needed: 
 * [**tidyverse**](https://www.tidyverse.org/)
-* [**ggplot2**]
-* [**data.table**]
-* [**tibble**]
-* [**readxl**]
+* **ggplot2**
+* **data.table**
+* **tibble**
+* **readxl**
 
 ## Useful references
 
