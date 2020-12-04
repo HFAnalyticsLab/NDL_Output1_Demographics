@@ -44,10 +44,10 @@ The repository contains the following folders:
 These scripts were written in R version (to be added) and RStudio Version 1.1.383. 
 The following R packages (available on CRAN) are needed: 
 * [**tidyverse**](https://www.tidyverse.org/)
-* [**ggplot2**](https://www.tidyverse.org/)
-* [**data.table**](https://www.tidyverse.org/)
-* [**tibble**](https://www.tidyverse.org/)
-* [**readxl**](https://www.tidyverse.org/
+* [**ggplot2**]
+* [**data.table**]
+* [**tibble**]
+* [**readxl**]
 
 ## Useful references
 
