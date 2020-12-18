@@ -1,0 +1,6 @@
+Name,Lat,Long,Site.Name,popup.lat,popup.long
+Aberdeen,57.1497,-2.0943,The Aberdeen Centre for Health Data Science (ACHDS)<br/>NHS Grampian<br/>University of Aberdeen,59,-2.0943
+Wales,51.6214,-3.9436,Public Health Wales<br/>NHS Wales Informatics Service (NWIS)<br/>Swansea University (SAIL Databank)<br/>Social Care Wales (SCW),51.6214,-8
+London,51.5074,-0.1278,Imperial College Health Partners (ICHP)<br/>Institute of Global Health Innovation (IGHI)<br/>Imperial College London (ICL)<br/>North West London CCGs,51.5074,4
+Liverpool,53.4084,-2.9916,Liverpool CCG<br/>Healthy Wirral Partnership<br/>Citizens Advice Bureau,55,-2.9916
+Leeds,53.8008,-1.5491,Leeds CCG<br/>Leeds City Council,53.8008,1.25
