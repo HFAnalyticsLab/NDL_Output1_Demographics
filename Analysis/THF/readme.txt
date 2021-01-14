@@ -1,0 +1,1 @@
+This folder contains the R code used by the Health Foundation to aggregate results from the five partners.
