@@ -91,7 +91,8 @@ group_by(.,IMDQuintile) %>%
   summarise(.,pop19 = sum(pop19)) %>%
   ungroup() %>%
   mutate(.,pop19_total=sum(LiverpoolWirral$pop19)) %>%
-  mutate(rate=pop19/pop19_total*100)
+  mutate(.,rate=pop19/pop19_total*100) %>%
+  mutate(.,Partner="LiverpoolWirral-ONS")
 
 ####################################################################################
 ################### Age and deprivation distr. in Liverpool-Wirral #################
@@ -130,15 +131,98 @@ LiverpoolWirral_agedepquint <- left_join(LiverpoolWirral_agedepquint,
                                          LiverpoolWirral.bis.totals.age,by="ageband") %>%
   left_join(.,LiverpoolWirral.bis.totals.dep,by="IMDQuintile")
 
-#Compute rates
+#Final rates
 
 LiverpoolWirral_agedepquint <- LiverpoolWirral_agedepquint %>%
   mutate(.,rate_over_age=pop19/agetotals*100) %>%
-  mutate(.,rate_over_dep=pop19/deptotals*100)
+  mutate(.,rate_over_dep=pop19/deptotals*100) %>%
+  mutate(.,Partner="LiverpoolWirral-ONS")
+
+#####################################################################
+################### Deprivation distr. in NW London #################
+#####################################################################
+
+NWLondon <- filter(LSOA_to_CCG,STP20NM %in% c("North West London Health and Care Partnership"))
+
+#Merge in population
+
+NWLondon <- left_join(NWLondon,pop_by_LSOA,by="LSOA11CD")
+
+filter(NWLondon,is.na(pop19))
+
+#Merge in deprivation
+
+NWLondon <- left_join(NWLondon,select(IMD19_by_LSOA,lsoa11cd,IMDQuintile),
+                             by=c("LSOA11CD"="lsoa11cd"))
+
+filter(NWLondon,is.na(IMDQuintile))
+
+#Descriptive statistics by quintile
+
+detach(package:plyr)
+
+NWLondon_depquint <- NWLondon %>%
+  group_by(.,IMDQuintile) %>%
+  summarise(.,pop19 = sum(pop19)) %>%
+  ungroup() %>%
+  mutate(.,pop19_total=sum(NWLondon$pop19)) %>%
+  mutate(.,rate=pop19/pop19_total*100) %>%
+  mutate(.,Partner="NWLondon-ONS")
+
+#############################################################################
+################### Age and deprivation distr. in NW London #################
+#############################################################################
+
+#Start with population, merge in CCG indicators
+NWLondon.bis <- left_join(pop_by_LSOA_ages,select(LSOA_to_CCG,"LSOA11CD","CCG20NM","STP20NM"),by="LSOA11CD") %>%
+  filter(.,STP20NM %in% c("North West London Health and Care Partnership"))
+
+#Merge in deprivation
+NWLondon.bis <- left_join(NWLondon.bis,select(IMD19_by_LSOA,"lsoa11cd","IMDQuintile"),
+                                 by=c("LSOA11CD"="lsoa11cd"))
+
+#Descriptive statistics by quintile and age group
+
+detach(package:plyr)
+
+NWLondon_agedepquint <- NWLondon.bis %>%
+  group_by(.,IMDQuintile,ageband) %>%
+  summarise(.,pop19 = sum(count)) %>%
+  ungroup()
+
+#Create totals
+
+NWLondon.bis.totals.age <-  NWLondon.bis %>%
+  group_by(.,ageband) %>%
+  summarise(.,agetotals = sum(count))
+
+NWLondon.bis.totals.dep <-  NWLondon.bis %>%
+  group_by(.,IMDQuintile) %>%
+  summarise(.,deptotals = sum(count))
+
+#Merge in totals
+
+NWLondon_agedepquint <- left_join(NWLondon_agedepquint,
+                                  NWLondon.bis.totals.age,by="ageband") %>%
+  left_join(.,NWLondon.bis.totals.dep,by="IMDQuintile")
+
+#Final rates
+
+NWLondon_agedepquint <- NWLondon_agedepquint %>%
+  mutate(.,rate_over_age=pop19/agetotals*100) %>%
+  mutate(.,rate_over_dep=pop19/deptotals*100) %>%
+  mutate(.,Partner="NWLondon-ONS")
+
+##########################################
+################### Aggregate ############
+##########################################
+
+allsites_depquint <- rbind.fill(NWLondon_depquint,LiverpoolWirral_depquint)
+allsites_agedepquint <- rbind.fill(NWLondon_agedepquint,LiverpoolWirral_agedepquint)
 
 ##########################################
 ################### Save #################
 ##########################################
 
-fwrite(LiverpoolWirral_depquint, file = paste0(rawdatadir,"opendata-demographics.csv"), sep = ",")
-fwrite(LiverpoolWirral_agedepquint, file = paste0(rawdatadir,"opendata-demographics-interactions.csv"), sep = ",")
+fwrite(allsites_depquint, file = paste0(rawdatadir,"opendata-demographics.csv"), sep = ",")
+fwrite(allsites_agedepquint, file = paste0(rawdatadir,"opendata-demographics-interactions.csv"), sep = ",")

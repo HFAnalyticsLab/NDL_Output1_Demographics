@@ -76,8 +76,8 @@ aux.totals.two <- filter(all_partners,interaction==0) %>%
 all_partners <- left_join(all_partners,aux.totals.one,by=c("Partner","var1","var1.level")) %>%
   left_join(.,aux.totals.two,by=c("Partner","var2","var2.level"))
 
-filter(all_partners,interaction==0) %>%
-  select(.,Partner,Breakdown_Field,var1,var2,var1.level,var2.level,var1.n,var2.n)
+# filter(all_partners,interaction==1&Partner=="Wales") %>%
+#   select(.,Partner,Breakdown_Field,var1,var2,var1.level,var2.level,var1.n,var2.n)
 
 ######################################################
 ################### Append Open data #################
@@ -96,7 +96,7 @@ open.england.reason$Breakdown_Value <- mapvalues(open.england.reason$Breakdown_V
                                              "rare genetic metabolic and autoimmune",
                                              "immunosuppression therapy",
                                              "pregnant with congenital heart defect"),
-                                    to = c("cancer","transplant","rare.disease",
+                                    to = c("cancer","transplant","rare_disease",
                                            "immunosuppressants","pregnant"))
 open.england.reason$Breakdown_Value_old <- NULL
 
@@ -107,6 +107,15 @@ open.england.sex <- filter(SPL_by_LA_gender,LA.Name=="ENGLAND") %>%
   dplyr::rename(.,Count=Patient.Count.Sex,Partner=LA.Name,n_known=Patient.Count,Breakdown_Value=Breakdown.Value) %>%
   mutate(.,Breakdown_Field="sex",n=n_known) %>%
   mutate(.,Breakdown_Value=tolower(Breakdown_Value))
+
+### Method of addition
+
+open.england.source <- data.frame(Partner=rep("England",2),
+           Breakdown_Field=rep("shielding_list_source",2),
+           Breakdown_Value=c("national","local"),
+           Count=c(1389575,848961),
+           n_known=rep(2238536,2),
+           n=rep(2238536,2))
 
 ### Age
 
@@ -131,7 +140,7 @@ nr_under30_row <- filter(open.england.age,Breakdown_Value=="90+") %>%
   #Append
 open.england.age <- rbind.fill(open.england.age,nr_80_plus_row,nr_under30_row)
 
-  #Changes to NDL data to acomodate Open Data comparison
+  #Changes to NDL data to accommodate Open Data comparison
 all_partners_under30 <- all_partners %>%
   mutate(.,`under30`=ifelse(Breakdown_Field=="age_band"&(Breakdown_Value=="0-19"|Breakdown_Value=="20-29"),1,0),
          Count=as.numeric(Count)) %>%
@@ -147,25 +156,11 @@ all_partners <- rbind.fill(all_partners,all_partners_under30)
 
 ### Append all
 
-all_partners_and_open <- rbind.fill(all_partners,open.england.reason,open.england.age,open.england.sex)
+all_partners_and_open <- rbind.fill(all_partners,open.england.reason,
+                                    open.england.age,open.england.sex,
+                                    open.england.source)
 
 all_partners_and_open <- arrange(all_partners_and_open, Partner, Breakdown_Field)
-
-# ### Dummy data for other sites
-# 
-# filter(all_partners,Partner=="GrampianAberdeen") %>%
-#   mutate(.,Count=Count+round(runif(nrow(all_partners),-(16025/100),(16025/100)),0)) %>%
-#   mutate(.,Partner="LiverpoolWirral")
-# round(runif(nrow(all_partners),-(16025/100),(16025/100)),0)
-# 
-# other_partners <- rtmvnorm(2, mean = all_partners$Count,
-#            sigma = diag(nrow(all_partners)),
-#            lower=(-1)*all_partners$n_known,
-#            upper=(1)*all_partners$n_known,
-#            algorithm="gibbs")
-# 
-# sigma <- matrix(c(4,2,2,3), ncol=2)
-# x <- rtmvnorm(n=500, mean=c(1,2), sigma=sigma, upper=c(1,0))
 
 ################################################
 ################### Clean data #################
@@ -175,9 +170,16 @@ all_partners_and_open <- arrange(all_partners_and_open, Partner, Breakdown_Field
 
 all_partners_clean <- all_partners_and_open %>% filter(.,!str_detect(Breakdown_Value, "total"))
 
+### Remove results lost to SDC
+
+all_partners_clean <- all_partners_clean %>% 
+  mutate(Count = gsub("\\*", "", Count))
+
+all_partners_clean$Count[grepl("<", all_partners_clean$Count, fixed = TRUE)] <- NA
+
 ### Compute rates
 
-all_partners_clean <- all_partners_clean %>% mutate(Count = gsub("\\*", "", Count)) %>%
+all_partners_clean <- all_partners_clean %>%
   mutate(.,Count=as.numeric(Count),n=as.numeric(n),n_known=as.numeric(n_known),
          var1.n=as.numeric(var1.n),var2.n=as.numeric(var2.n)) %>%
   mutate(.,rate_all=Count/n*100,rate_known=Count/n_known*100) %>%

@@ -36,6 +36,9 @@ graphsdir <- "M:/Analytics/Networked Data Lab/Partner outputs/Output 1 Demograph
 #Partner data
 allpartners.demographics.clean <- fread(paste0(rawdatadir,"allpartners-demographics-clean.csv"), header=TRUE, sep=",", check.names=T)
 
+filter(allpartners.demographics.clean,Breakdown_Field=="shielding_list_source"&
+         Partner=="Wales")
+
 #Population data
 pop_by_LA <- fread(paste0(opendatadir,"Clean data/","pop_by_LA.csv"), header=TRUE, sep=",", check.names=T)
 pop_by_CCG <- read_excel(paste0(popdatadir,"Other data/Mid-year population estimates/CCG/sape22dt6amid2019ccg2020estimatesunformatted/","SAPE22DT6a-mid-2019-ccg-2020-estimates-unformatted.xlsx"),
@@ -58,8 +61,8 @@ SPL_by_CCG <- fread(paste0(popdatadir,"SPL/England/November/","Coronavirus Shiel
 
 #Other open data (summary tables)
 SPL_by_GOR_wEng <- fread(paste0(graphsdir,"SPL_by_GOR_wEng (October).csv"), header=TRUE, sep=",", check.names=T)
-LiverpoolWirral_depquint <- fread(paste0(rawdatadir,"opendata-demographics.csv"), header=TRUE, sep=",", check.names=T)
-LiverpoolWirral_agedepquint <- fread(paste0(rawdatadir,"opendata-demographics-interactions.csv"), header=TRUE, sep=",", check.names=T)
+opendata_depquint <- fread(paste0(rawdatadir,"opendata-demographics.csv"), header=TRUE, sep=",", check.names=T)
+opendata_agedepquint <- fread(paste0(rawdatadir,"opendata-demographics-interactions.csv"), header=TRUE, sep=",", check.names=T)
 
 ###############################################
 ################### Shielding rate ############
@@ -79,13 +82,42 @@ pop_grampian <- pop_by_scottish_board %>% filter(., `NHS Board areas` %in% c("Gr
 pop_shielding_grampian_NDL <- 14773
 pct_shielding_grampian_NDL <- pop_shielding_grampian_NDL/pop_grampian*100
 
+  #Wales
+pop_wales <- filter(pop_by_LA,LAD19NM=="WALES")$pop19
+pct_wales <- filter(SPL_by_LA_Wales_All,LA.Name=="Wales")$Patient.Count/pop_wales*100
+
+  #North West London
+pop_nwl <- pop_by_CCG %>% filter(., `STP20 Name` %in% c("North West London Health and Care Partnership")) %>%
+  select(.,`All Ages`) %>% sum(.,na.rm=TRUE)
+nwl_ccgs <- pop_by_CCG %>% filter(., `STP20 Name` %in% c("North West London Health and Care Partnership")) %>%
+  select(.,`CCG Name`) %>% unlist()
+pop_shielding_nwl_opendata <- SPL_by_CCG %>% filter(.,Breakdown.Field=="ALL"&(CCG.Name %in% nwl_ccgs)) %>%
+  select(.,Patient.Count) %>% mutate(.,Patient.Count=as.numeric(Patient.Count)) %>% sum(.,na.rm=TRUE)
+pct_shielding_nwl <- pop_shielding_nwl_opendata/pop_nwl*100
+
+  #Leeds
+pop_leeds <- pop_by_CCG %>% filter(., `CCG Name` %in% c("NHS Leeds CCG")) %>%
+  select(.,`All Ages`) %>% sum(.,na.rm=TRUE)
+pop_shielding_leeds_opendata <- SPL_by_CCG %>% filter(.,Breakdown.Field=="ALL"&(CCG.Name %in% "NHS Leeds CCG")) %>%
+  select(.,Patient.Count) %>% mutate(.,Patient.Count=as.numeric(Patient.Count)) %>% sum(.,na.rm=TRUE)
+pct_shielding_leeds <- pop_shielding_leeds_opendata/pop_leeds*100
+
+  #UK
+pop_UK <- 66796807
+pop_shielding_UK <- 2633742
+pct_shielding_UK <- pop_shielding_UK/pop_UK*100
+
   #Chart data
 rate_by_partner_chart_data <- rbind.data.frame(
   c("Liverpool-Wirral",pct_shielding_liverpool_wirral_opendata,pop_shielding_liverpool_wirral_opendata,pop_liverpool_wirral),
   c("North West England",filter(SPL_by_GOR_wEng,RGN19NM=="North West")$Shielders_pct,sum(filter(SPL_by_LA_All,RGN19NM=="North West")$Patient.Count),filter(pop_by_LA,LAD19NM=="NORTH WEST")$pop19),
   c("England",filter(SPL_by_GOR_wEng,RGN19NM=="England")$Shielders_pct,filter(SPL_by_LA_All_incl_ENG,LA.Name=="ENGLAND")$Patient.Count,filter(pop_by_LA,LAD19NM=="ENGLAND")$pop19),
   c("Grampian",pct_shielding_grampian_NDL,pop_shielding_grampian_NDL,pop_grampian),
-  c("Scotland",filter(SPL_by_GOR_wEng,RGN19NM=="Scotland")$Shielders_pct,179997,filter(pop_by_LA,LAD19NM=="SCOTLAND")$pop19)
+  c("Scotland",filter(SPL_by_GOR_wEng,RGN19NM=="Scotland")$Shielders_pct,179997,filter(pop_by_LA,LAD19NM=="SCOTLAND")$pop19),
+  c("Wales",pct_wales,filter(SPL_by_LA_Wales_All,LA.Name=="Wales")$Patient.Count,pop_wales),
+  c("North West London",pct_shielding_nwl,pop_shielding_nwl_opendata,pop_nwl),
+  c("Leeds",pct_shielding_leeds,pop_shielding_leeds_opendata,pop_leeds),
+  c("UK",pct_shielding_UK,pop_shielding_UK,pop_UK)
 )
 names(rate_by_partner_chart_data) <- c("Location","Rate","numerator","denominator")
 
@@ -193,9 +225,18 @@ fwrite(sex_chart_data_full, file = paste0(graphsdir,"data for charts/sex_chart_d
 ################### Reason for shielding ############
 #####################################################
 
+#Leeds
+respiratory_leeds <- filter(SPL_by_CCG,Breakdown.Field=="Disease Group"&CCG.Name=="NHS Leeds CCG"&
+                              (Breakdown.Value %in% c("Respiratory (Severe Asthma)","Respiratory (Severe COPD)","Respiratory (Severe Permanent)"))) %>%
+  select(.,Patient.Count) %>% mutate(.,Patient.Count=as.numeric(Patient.Count)) %>% sum(.)
+shielding_leeds <- filter(SPL_by_CCG,Breakdown.Field=="ALL"&CCG.Name=="NHS Leeds CCG") %>%
+  select(.,Patient.Count) %>% mutate(.,Patient.Count=as.numeric(Patient.Count)) %>% sum(.)
+rate_respiratory_leeds <- respiratory_leeds/shielding_leeds*100
+
+#Chart with others
 reason_chart_data <- filter(allpartners.demographics.clean,Breakdown_Field=="reason_shielding")
 
-cols3 <- brewer.pal(n = 3, name = "Set1")
+cols9 <- brewer.pal(n = 9, name = "Set1")
 
 by_reason_chart <- ggplot(reason_chart_data,
                           aes(x=factor(Breakdown_Value), y = rate_all,fill=factor(Partner))) +
@@ -427,6 +468,11 @@ fwrite(number_conditions_data, file = paste0(graphsdir,"data for charts/number_c
 sex_imd_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="imd_sex"&
                               var2.level!="unknown/other")
 
+filter(sex_imd_data_full,Partner=="Wales")
+filter(sex_imd_data_full,Partner=="North West London")
+filter(allpartners.demographics.clean,Partner=="North West London"&Breakdown_Field=="imd")
+filter(allpartners.demographics.clean,Partner=="North West London"&Breakdown_Field=="sex")
+
 sex_imd_data_small <- select(sex_imd_data_full,Partner,var1,var2,
                              var1.level,var2.level,rate_all,rate_known,interaction_rate_v1,interaction_rate_v2,n,n_known) %>%
   mutate(.,across(where(is.numeric), round, 1))
@@ -630,7 +676,7 @@ fwrite(reason_imd_data_small, file = paste0(graphsdir,"data for charts/reason_im
 ################### Reason vs. Age ############
 ###############################################
 
-reason_age_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="age_band_shielding_reason"&
+reason_age_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="shielding_reason_age_band"&
                                  var1.level!="unknown"&var2.level!="unknown")
 
 reason_age_data_small <- select(reason_age_data_full,Partner,var1,var2,
