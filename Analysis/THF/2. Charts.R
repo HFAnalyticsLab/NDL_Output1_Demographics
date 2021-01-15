@@ -36,9 +36,6 @@ graphsdir <- "M:/Analytics/Networked Data Lab/Partner outputs/Output 1 Demograph
 #Partner data
 allpartners.demographics.clean <- fread(paste0(rawdatadir,"allpartners-demographics-clean.csv"), header=TRUE, sep=",", check.names=T)
 
-filter(allpartners.demographics.clean,Breakdown_Field=="shielding_list_source"&
-         Partner=="Wales")
-
 #Population data
 pop_by_LA <- fread(paste0(opendatadir,"Clean data/","pop_by_LA.csv"), header=TRUE, sep=",", check.names=T)
 pop_by_CCG <- read_excel(paste0(popdatadir,"Other data/Mid-year population estimates/CCG/sape22dt6amid2019ccg2020estimatesunformatted/","SAPE22DT6a-mid-2019-ccg-2020-estimates-unformatted.xlsx"),

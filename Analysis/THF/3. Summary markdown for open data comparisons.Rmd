@@ -1,0 +1,263 @@
+---
+title: "NDL Shielded Patients Open Data comparison"
+author: "Sebastien Peytrignet"
+date: "11/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+#Load packages
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(dplyr,stringr,sp,ggplot2,plyr,readODS,
+               gmodels,Rmisc,DescTools,data.table,
+               Hmisc,tibble,leaflet,rgeos,raster,plotly,
+               pbapply,pbmcapply,here,rgdal,RColorBrewer,ggthemes,
+               ggchicklet,tidyverse,showtext,ggchicklet,readxl)
+
+#Set directory where inputs are saved
+rawdatadir <- "M:/Analytics/Networked Data Lab/Partner outputs/Output 1 Demographics/"
+opendatadir <- "M:/Analytics/Networked Data Lab/COVID19_Shielding/"
+popdatadir <- "M:/Analytics/Networked Data Lab/Shielding/"
+graphsdir <- "M:/Analytics/Networked Data Lab/Partner outputs/Output 1 Demographics/Charts/"
+
+#Partner data
+allpartners.demographics.clean <- fread(paste0(rawdatadir,"allpartners-demographics-clean.csv"), header=TRUE, sep=",", check.names=T)
+
+
+#Population data
+pop_by_LA <- fread(paste0(opendatadir,"Clean data/","pop_by_LA.csv"), header=TRUE, sep=",", check.names=T)
+pop_by_CCG <- read_excel(paste0(popdatadir,"Other data/Mid-year population estimates/CCG/sape22dt6amid2019ccg2020estimatesunformatted/","SAPE22DT6a-mid-2019-ccg-2020-estimates-unformatted.xlsx"),
+                         sheet = "Mid-2019 Persons",skip=6) %>% filter(.,!is.na(`CCG Code`))
+pop_by_scottish_board <- read_excel(paste0(popdatadir,"Other data/Mid-year population estimates/Scotland/","mid-year-pop-est-19-data.xlsx"),
+                                    sheet = "Table 2",range="A40:CQ54")
+
+#Other open data (SPL)
+SPL_by_LA_dgroup_dep <- fread(paste0(opendatadir,"Clean data/","SPL_by_LA_dgroup_dep.csv"), header=TRUE, sep=",", check.names=T)
+SPL_by_LA_dgroup <- fread(paste0(opendatadir,"Clean data/","SPL_by_LA_dgroup.csv"), header=TRUE, sep=",", check.names=T)
+SPL_by_LA_agegroup <- fread(paste0(opendatadir,"Clean data/","SPL_by_LA_agegroup.csv"), header=TRUE, sep=",", check.names=T)
+SPL_by_LA <- fread(paste0(opendatadir,"Clean data/","SPL_by_LA.csv"), header=TRUE, sep=",", check.names=T)
+SPL_by_LA_All <- fread(paste0(opendatadir,"Clean data/","SPL_by_LA_All.csv"), header=TRUE, sep=",", check.names=T)
+SPL_by_LA_All_incl_ENG <- fread(paste0(opendatadir,"Clean data/","SPL_by_LA_All_incl_ENG.csv"), header=TRUE, sep=",", check.names=T)
+SPL_by_LA_Wales_All <- fread(paste0(opendatadir,"Clean data/","SPL_by_LA_Wales_All.csv"), header=TRUE, sep=",", check.names=T)
+SPL_by_LA_gender <- fread(paste0(opendatadir,"Clean data/","SPL_by_LA_gender.csv"), header=TRUE, sep=",", check.names=T)
+
+#Other open data (SPL by CCG)
+SPL_by_CCG <- fread(paste0(popdatadir,"SPL/England/November/","Coronavirus Shielded Patient List, England - Open Data with CMO DG - CCG - 2020-11-06 v2.csv"), header=TRUE, sep=",", check.names=T)
+
+#Other open data (summary tables)
+SPL_by_GOR_wEng <- fread(paste0(graphsdir,"SPL_by_GOR_wEng (October).csv"), header=TRUE, sep=",", check.names=T)
+opendata_depquint <- fread(paste0(rawdatadir,"opendata-demographics.csv"), header=TRUE, sep=",", check.names=T)
+opendata_agedepquint <- fread(paste0(rawdatadir,"opendata-demographics-interactions.csv"), header=TRUE, sep=",", check.names=T)
+```
+
+## Deprivation
+
+```{r dep, echo=FALSE, message=FALSE, warning=FALSE,fig.width=10,fig.height=5}
+deprivation_chart_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="imd")
+
+cols6 <- c(brewer.pal(n = 5, name = "RdYlGn"),"#bdbdbd")
+
+by_dep_chart <- ggplot(deprivation_chart_data_full,
+                            aes(x=factor(Partner), y = rate_all,fill=factor(Breakdown_Value))) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 7),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm")))  +
+  labs(title="%",y = " ",x="Partner") +
+    scale_fill_manual(values=cols6) +
+  guides(fill=guide_legend(title="Deprivation (IMD/SIMD)"))
+
+ggplotly(by_dep_chart)
+```
+
+## Deprivation in Liverpool-Wirral (Open data comparison)
+
+```{r deplpool, echo=FALSE, message=FALSE, warning=FALSE,fig.width=10,fig.height=5}
+deprivation_ndl_lpool <- filter(allpartners.demographics.clean,Breakdown_Field=="imd"&
+                                        Partner=="LiverpoolWirral") %>%
+  select(.,Partner,Breakdown_Value,rate_all)
+
+LiverpoolWirral_depquint <- opendata_depquint %>%
+  filter(.,Partner=="LiverpoolWirral-ONS") %>%
+  rename(.,Breakdown_Value=IMDQuintile,rate_all=rate) %>%
+  select(.,Breakdown_Value,rate_all,Partner)
+
+deprivation_ndl_lpool <- rbind.fill(deprivation_ndl_lpool,LiverpoolWirral_depquint)
+
+cols6 <- c(brewer.pal(n = 5, name = "RdYlGn"),"#bdbdbd")
+
+by_deplpool_chart <- ggplot(deprivation_ndl_lpool,
+                       aes(x=factor(Partner), y = rate_all,fill=factor(Breakdown_Value))) +
+  geom_bar(stat="identity",position="dodge") +
+  geom_text(aes(label=paste0(round(rate_all,0),"%"),y=(rate_all+2)),size=4,angle = 45,hjust=0.5,vjust=0,colour="red",position = position_dodge(.9)) +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 7),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm")))  +
+  labs(title="%",y = " ",x="Partner") +
+  scale_fill_manual(values=cols6) +
+  guides(fill=guide_legend(title="Deprivation (IMD)"))
+
+ggplotly(by_deplpool_chart)
+```
+
+## Deprivation in North West London (Open data comparison)
+
+```{r depnwlondon, echo=FALSE, message=FALSE, warning=FALSE,fig.width=10,fig.height=5}
+deprivation_ndl_nwlondon <- filter(allpartners.demographics.clean,Breakdown_Field=="imd"&
+                                        Partner=="North West London") %>%
+  select(.,Partner,Breakdown_Value,rate_all)
+
+NWLondon_depquint <- opendata_depquint %>%
+  filter(.,Partner=="NWLondon-ONS") %>%
+  rename(.,Breakdown_Value=IMDQuintile,rate_all=rate) %>%
+  select(.,Breakdown_Value,rate_all,Partner)
+
+deprivation_ndl_nwlondon <- rbind.fill(deprivation_ndl_nwlondon,NWLondon_depquint)
+
+cols6 <- c(brewer.pal(n = 5, name = "RdYlGn"),"#bdbdbd")
+
+by_depnwlondon_chart <- ggplot(deprivation_ndl_nwlondon,
+                       aes(x=factor(Partner), y = rate_all,fill=factor(Breakdown_Value))) +
+  geom_bar(stat="identity",position="dodge") +
+  geom_text(aes(label=paste0(round(rate_all,0),"%"),y=(rate_all+2)),size=4,angle = 45,hjust=0.5,vjust=0,colour="red",position = position_dodge(.9)) +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 7),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm")))  +
+  labs(title="%",y = " ",x="Partner") +
+  scale_fill_manual(values=cols6) +
+  guides(fill=guide_legend(title="Deprivation (IMD)"))
+
+ggplotly(by_depnwlondon_chart)
+```
+
+## IMD/SIMD vs. Age
+
+```{r imdage, echo=FALSE, message=FALSE, warning=FALSE,fig.width=10,fig.height=5}
+age_imd_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="age_band_imd") %>%
+  filter(.,var1.level %in% c("0-19","20-29","30-39","40-49","50-59","60-69","70-79","80+"))
+
+cols6 <- c(brewer.pal(n = 5, name = "RdYlGn"),"#bdbdbd")
+
+imd_age_chart <- ggplot(age_imd_data_full,
+                        aes(x=factor(var1.level),
+                            y = round(interaction_rate_v1,1),
+                            fill=factor(var2.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 7),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="Age group") +
+  scale_fill_manual(values=cols6) +
+  guides(fill=guide_legend(title="IMD/SIMD quintile"))
+
+ggplotly(imd_age_chart)
+```
+
+## IMD vs. Age (Open data comparison for Liverpool-Wirral)
+
+```{r imdageopen, echo=FALSE, message=FALSE, warning=FALSE,fig.width=10,fig.height=5}
+#Data from NDL chart
+age_imd_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="age_band_imd") %>%
+  filter(.,var1.level %in% c("0-19","20-29","30-39","40-49","50-59","60-69","70-79","80+")) %>%
+  filter(.,!(var2.level=="unknown")&Partner=="LiverpoolWirral")
+
+#Prepare data for comparions
+opendata_comparison_bis <- filter(age_imd_data_full,Partner=="LiverpoolWirral")
+
+#Change naming conventions
+LiverpoolWirral_agedepquint <- filter(opendata_agedepquint,Partner=="LiverpoolWirral-ONS")
+LiverpoolWirral_agedepquint$ageband <- str_replace_all(LiverpoolWirral_agedepquint$ageband,"to","-")
+LiverpoolWirral_agedepquint$ageband <- str_replace_all(LiverpoolWirral_agedepquint$ageband,"plus","+")
+LiverpoolWirral_agedepquint <- dplyr::rename(LiverpoolWirral_agedepquint,
+                                             var1.level=ageband,
+                                             var2.level=IMDQuintile,
+                                             interaction_rate_v1=rate_over_age)
+
+#Append datasets
+opendata_comparison_bis <- rbind.fill(opendata_comparison_bis,LiverpoolWirral_agedepquint)
+
+#Chart
+cols6 <- c(brewer.pal(n = 5, name = "RdYlGn"),"#bdbdbd")
+age_dep_open <- ggplot(opendata_comparison_bis,
+                       aes(x=factor(var1.level),
+                           y = interaction_rate_v1,
+                           fill=factor(var2.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 7),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="Age group") +
+  scale_fill_manual(values=cols6) +
+  guides(fill=guide_legend(title="IMD quintile"))
+
+ggplotly(age_dep_open)
+```
+
+## IMD vs. Age (Open data comparison for North West London)
+
+```{r imdageopen_nwlondon, echo=FALSE, message=FALSE, warning=FALSE,fig.width=10,fig.height=5}
+#Data from NDL chart
+age_imd_data_full <- filter(allpartners.demographics.clean,Breakdown_Field=="age_band_imd") %>%
+  filter(.,var1.level %in% c("0-19","20-29","30-39","40-49","50-59","60-69","70-79","80+")) %>%
+  filter(.,!(var2.level=="unknown")&Partner=="North West London")
+
+#Prepare data for comparisons
+opendata_comparison_bis <- filter(age_imd_data_full,Partner=="North West London")
+
+#Change naming conventions
+NWLondon_agedepquint <- filter(opendata_agedepquint,Partner=="NWLondon-ONS")
+NWLondon_agedepquint$ageband <- str_replace_all(NWLondon_agedepquint$ageband,"to","-")
+NWLondon_agedepquint$ageband <- str_replace_all(NWLondon_agedepquint$ageband,"plus","+")
+NWLondon_agedepquint <- dplyr::rename(NWLondon_agedepquint,
+                                             var1.level=ageband,
+                                             var2.level=IMDQuintile,
+                                             interaction_rate_v1=rate_over_age)
+
+#Append datasets
+opendata_comparison_bis <- rbind.fill(opendata_comparison_bis,NWLondon_agedepquint)
+
+#Chart
+cols6 <- c(brewer.pal(n = 5, name = "RdYlGn"),"#bdbdbd")
+age_dep_open <- ggplot(opendata_comparison_bis,
+                       aes(x=factor(var1.level),
+                           y = interaction_rate_v1,
+                           fill=factor(var2.level))) +
+  facet_wrap(~ Partner) +
+  geom_bar(stat="identity",position="dodge") +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(),axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(),axis.ticks.x=element_blank(),
+        text = element_text(size = 7),
+        axis.text = element_text(size = 7),
+        axis.title.x = element_text(margin = unit(c(3, 0, 0, 0), "mm"))) +
+  labs(title=" ",y = " ",x="Age group") +
+  scale_fill_manual(values=cols6) +
+  guides(fill=guide_legend(title="IMD quintile"))
+
+ggplotly(age_dep_open)
+```
