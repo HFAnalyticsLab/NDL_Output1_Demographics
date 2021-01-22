@@ -1,4 +1,4 @@
-<img src="ndlbanner.png" width="1006" height="239">
+<img src="ndlbanner.png">
 
 # Networked Data Lab: Demographic characteristics of shielded patients
 
