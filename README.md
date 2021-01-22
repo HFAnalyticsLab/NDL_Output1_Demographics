@@ -1,3 +1,5 @@
+<img src="ndlbanner.png" width="1006" height="239">
+
 # Networked Data Lab: Demographic characteristics of shielded patients
 
 #### Project Status: In progess
