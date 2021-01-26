@@ -50,8 +50,8 @@ These scripts were written in R version 4.0.2 and RStudio Version 1.1.383.
 
 * Sebastien Peytrignet, The Health Foundation - [Twitter](https://twitter.com/SebastienPeytr2) - [GitHub](https://github.com/speytrignet-thf)
 * Karen Hodgson, The Health Foundation - [Twitter](https://twitter.com/KarenHodgePodge) - [GitHub](https://github.com/KarenHodgson)
-* Jessica Butler, Aberdeen Centre for Health Data Science (ACHDS)  [Twitter](https://twitter.com/jessbutler284)
-* Alisha Davies, Public Health Wales [Twitter](https://twitter.com/AlishaDavies1)
+* Jessica Butler, Aberdeen Centre for Health Data Science (ACHDS) - [Twitter](https://twitter.com/jessbutler284)
+* Alisha Davies, Public Health Wales - [Twitter](https://twitter.com/AlishaDavies1)
 * Roberto Fernandez Crespo, Imperial College Health Partners
 * David Knowles, NHS Liverpool CCG
 * Frank Wood, NHS Leeds CCG
