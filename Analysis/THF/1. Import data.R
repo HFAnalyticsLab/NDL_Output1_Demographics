@@ -2,13 +2,6 @@
 ################### TO-DO ####################
 ##############################################
 
-#Interaction totals can be done with merging rather than manually
-
-#Add known total column, for some variables it's uncertain due to SDC
-#Excel needs a QA for both partners
-#Each interaction TABLE has a fixed total and total.know
-#Do it directly from the tables?
-
 ##############################################
 ################### SETUP ####################
 ##############################################
@@ -172,10 +165,8 @@ all_partners_clean <- all_partners_and_open %>% filter(.,!str_detect(Breakdown_V
 
 ### Remove results lost to SDC
 
-all_partners_clean <- all_partners_clean %>% 
-  mutate(Count = gsub("\\*", "", Count))
-
 all_partners_clean$Count[grepl("<", all_partners_clean$Count, fixed = TRUE)] <- NA
+all_partners_clean$Count[grepl("+", all_partners_clean$Count, fixed = TRUE)] <- NA
 
 ### Compute rates
 

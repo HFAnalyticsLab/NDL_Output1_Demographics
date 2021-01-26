@@ -2,9 +2,6 @@
 ################### DEVELOPMENT IDEAS ####################
 ##########################################################
 
-##Present initial findings in an RMardown
-##Using plotly to enable hovering over values
-
 ##############################################
 ################### SETUP ####################
 ##############################################
@@ -103,6 +100,7 @@ pct_shielding_leeds <- pop_shielding_leeds_opendata/pop_leeds*100
 pop_UK <- 66796807
 pop_shielding_UK <- 2633742
 pct_shielding_UK <- pop_shielding_UK/pop_UK*100
+pop_NDL <- pop_leeds+pop_nwl+pop_grampian+pop_liverpool_wirral+pop_wales
 
   #Chart data
 rate_by_partner_chart_data <- rbind.data.frame(
