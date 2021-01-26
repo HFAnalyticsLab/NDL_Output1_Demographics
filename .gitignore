@@ -9,4 +9,4 @@
 .Rproj.user
 
 # Hide RMarkdown
-/Analysis/THF/*.*
+/Analysis/THF/.*
