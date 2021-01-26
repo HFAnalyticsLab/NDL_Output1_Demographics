@@ -3,6 +3,7 @@
 
 #R Project
 *.Rproj
+*.DS_Store
 
 # Ada Library Information
 *.ali
