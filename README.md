@@ -1,6 +1,6 @@
 <img src="ndlbanner.png" width="405" height="96">
 
-# Networked Data Lab: Characteristics of clinically extremely vulnerable people during COVID-19
+# Networked Data Lab: Demographic variation across Britain among those advised to shield from COVID-19
 
 #### Project Status: In progess
 
