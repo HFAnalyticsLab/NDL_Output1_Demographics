@@ -6,11 +6,11 @@
 
 ## Project Description
 
-This Networked Data Lab analysis will focus on clinically extremely vulnerable (CEV) people, also known as the shielding population - the group of people most at risk of becoming seriously ill from COVID-19 . This group were asked to not leave their homes and to minimise all face-to-face contact up until the end of July 2020 in most of the UK. Whilst the shielding guidance was paused over Summer, people were once again asked to minimise their contact with others from November.
+This Networked Data Lab analysis focusses on clinically extremely vulnerable (CEV) people, also known as the shielding population - the group of people most at risk of becoming seriously ill from COVID-19 . This group were asked to not leave their homes and to minimise all face-to-face contact up until the end of July 2020 in most of the UK. Whilst the shielding guidance was paused over Summer, people were once again asked to minimise their contact with others from November.
 
 We are using a federated approach to data analysis and each partner will be contributing the same descriptive analysis based on their local population. These results will then be analysed and aggregated where necessary.
 
-The analysis will allow us to have a better understanding of who makes up this group of people and better understand their health care needs. This first output focuses on the demographics of CEV people.
+The analysis will allow us to have a better understanding of who makes up this group of people and better understand their health care needs. This first output focuses on the demographics of CEV people and can be found [online](https://www.health.org.uk/the-networked-data-lab).
 
 ## Partners
 
@@ -36,28 +36,25 @@ This analysis relies on the following data sources, which have been accessed by 
 
 The repository contains the following folders:
 
-- **Extraction:** this contains summaries from each partner on how they extracted their data and defined their cohorts.
-- **Standardization and cleaning:** this contains .R code from each partner to clean data and create the required variables for this analysis (e.g. age bands). The goal is to make the five datasets as similar to each other as possible.
-- **Analysis:** this contains the .R code used by each partner for their analyses, using clean data to produce summary statistic tables on patient demographics. This folder also includes the code used by The Health Foundation (THF) to aggregate and analyse the five sets of results.
-- **Outputs:** this contains the final outputs from each of the parnters (after applying statistical disclosure control methods).
+- **Analysis:** this contains markdown files with the R code used by each partner for their analys, starting with clean data to produce summary statistic tables on patient demographics.
+- **Outputs:** this contains the Open Data release with the summary statistics produced by all partners (after applying statistical disclosure control methods).
 
 ### Requirements
 
 These scripts were written in R version 4.0.2 and RStudio Version 1.1.383. 
-The following R packages (available on CRAN) are needed: 
-* [**tidyverse**](https://www.tidyverse.org/)
-* **ggplot2**
-* **data.table**
-* **tibble**
-* **readxl**
 
 ## Useful references
 
 
 ## Authors
 
-* Sebastien Peytrignet - [Twitter](https://twitter.com/SebastienPeytr2) - [GitHub](https://github.com/speytrignet-thf)
-* Karen Hodgson - [Twitter](https://twitter.com/KarenHodgePodge) - [GitHub](https://github.com/KarenHodgson)
+* Sebastien Peytrignet, The Health Foundation - [Twitter](https://twitter.com/SebastienPeytr2) - [GitHub](https://github.com/speytrignet-thf)
+* Karen Hodgson, The Health Foundation - [Twitter](https://twitter.com/KarenHodgePodge) - [GitHub](https://github.com/KarenHodgson)
+* Jessica Butler, Aberdeen Centre for Health Data Science (ACHDS)  [Twitter](https://twitter.com/jessbutler284)
+* Alisha Davies, Public Health Wales [Twitter](https://twitter.com/AlishaDavies1)
+* Roberto Fernandez Crespo, Imperial College Health Partners
+* David Knowles, NHS Liverpool CCG
+* Frank Wood, NHS Leeds CCG
 
 ## License
 
