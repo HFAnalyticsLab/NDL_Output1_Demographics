@@ -1,0 +1,268 @@
+
+# Libraries
+```{r, message = F}
+library(tidyverse)
+
+.libPaths(c('H:/DaSH416/R_libraries/R_Transfer_25062020', 'H:/DaSH416/R_libraries/R_Libraries_15072020'))
+
+library(here)
+library(vroom)
+library(lubridate)
+library(janitor)
+
+options(scipen = 999)
+```
+
+# Load original shielding list data
+```{r message = F}
+shielding_long <-
+  vroom(here("original_data", 'Dash416_Shield20201012_Release.csv'), delim = "¬") %>%
+  clean_names() %>%
+  rename(id = dash416_release_uid) %>%
+  mutate(
+    date_addition = as_date(ymd_hms(earliest_addition_this_chi)),
+    date_death = as_date(ymd(trak_person_deceased_date))) %>%
+  select(id, group, origin_for_this_group, date_addition, removal_description, date_death)
+
+#add translation of shielding group codes
+shielding_long <-
+  vroom(here("original_data", "shielding_codes_short.csv"),
+        delim = ",") %>%
+  left_join(shielding_long, ., by = c("group" = "shielding_group"))
+
+demog <-
+  vroom(here("original_data", 'Dash416_Shield20201012_Demographic_Release.csv'),
+        delim = "¬") %>%
+  rename(id = Dash416_Release_UID) %>%
+  clean_names() %>%
+  select(id, calc_sex, calc_dob)
+
+vulnerability <-
+  vroom(here("original_data", 'Dash416_Shield20201012_vulnerability_Release.csv'),
+        delim = "¬") %>%
+  clean_names() %>%
+  rename(id = dash416_release_uid,
+         simd_quintile = simd2020v2_quintile, 
+         ur_name = u_rname) %>%
+  select(id, simd_quintile, ur_name)
+```
+
+
+# Population exclusions
+```{r}
+#anyone not on before 1 Aug
+#anyone who died before 28 March
+#false positives
+#moved from Scotland
+shielding_long <-
+  shielding_long %>%
+  filter(date_addition <= ymd("2020-07-31")) %>%
+  filter(date_death > ymd("2020-03-28") |
+           is.na(date_death)) %>%
+  filter(
+    !removal_description %in%
+      c("FalsePosLungCancer", "False Positive", "Moved out of Scotland")) 
+```
+
+```{r}
+#if person was added nationally for any shielding reason, then classified as source is national, otherwise source is local
+shielding_source <-
+  shielding_long %>%
+  group_by(id) %>%
+  summarise(
+    national = sum(origin_for_this_group == "central"),
+    local = sum(origin_for_this_group == "Local")) %>%
+  mutate(source = ifelse(national > 0, "national", "local")) %>%
+    select(id, source)
+
+#concatenate individuals' shielding reasons
+shielding_groups <-
+  shielding_long %>%
+  group_by(id) %>%
+  arrange(group) %>%
+  summarise(
+    shielding_groups = paste(group, collapse = ", "),
+    shielding_reasons = paste(shielding_group_description, collapse = ", ")) %>%
+  mutate(multiple_reasons = ifelse(str_detect(shielding_reasons, ","), 1, 0))
+
+
+#make patient-level table of shielding characteristics to be joined to demographics
+shielding_unique <-
+  shielding_long %>%
+  group_by(id) %>%
+  slice_head() %>%
+  select(id, date_addition) %>%
+  left_join(., shielding_source, by = "id") %>%
+  left_join(., shielding_groups, by = "id")
+
+rm(shielding_groups, shielding_source)
+
+unique_ids <- shielding_unique$id
+```
+
+
+# Tidy demographic data
+```{r}
+demog <- 
+  demog %>%
+    filter(id %in% unique_ids)
+
+#create variables for sex and age band
+demog <- demog %>%
+  mutate(
+    sex = if_else(calc_sex == 1, "F", "M"),
+    dob = ymd(calc_dob),
+    age = as.period(interval(dob, ymd("2020-03-01")), units = "years")$year,
+    age_band = 
+      case_when(
+        age %in% c(0:19) ~ "0-19",
+        age %in% c(20:29) ~"20-29",
+        age %in% c(30:39) ~"30-39",
+        age %in% c(40:49) ~"40-49",
+        age %in% c(50:59) ~"50-59",
+        age %in% c(60:69) ~"60-69",
+        age %in% c(70:79) ~"70-79",
+        age %in% c(80:120) ~"80+")) %>%
+  select(-calc_sex, -calc_dob)
+
+demog$age_band <- factor(demog$age_band, levels = c("0-19", "20-29", "30-39", "40-49", "50-59", "60-69", "70-79", "80+"))
+
+#add details of shielding reasons to demographics
+demog <- 
+  demog %>%
+  left_join(., shielding_unique, "id") %>%
+  left_join(., vulnerability, by = "id")
+
+#add some demographics values to long shielding list
+shielding_long <-
+  demog %>%
+    select(id, age, age_band, sex, simd_quintile, ur_name) %>%
+  left_join(shielding_long, ., by = "id") 
+
+rm(vulnerability, shielding_unique)
+```
+
+
+```{r, message = F}
+sex <-
+  demog %>%
+  group_by(sex) %>%
+  summarise(n = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "sex.csv")
+
+age <-
+  demog %>%
+  group_by(age_band) %>%
+  summarise(n = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "age.csv")
+
+shielding_reasons <-
+  shielding_long %>%
+  group_by(shielding_group_description) %>%
+  summarise(n = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "shielding_reasons.csv")
+
+multiple_reasons_shield <-
+  demog %>% 
+  group_by(multiple_reasons) %>%
+  summarise(n = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "multiple_shielding_reasons.csv")
+
+source <- 
+  demog %>%
+  group_by(source) %>%
+  summarise(n = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "source.csv")
+
+simd <-
+  demog %>%
+  group_by(simd_quintile) %>%
+  summarise(n = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "simd.csv")
+
+urban_rural <- 
+  demog %>%
+  group_by(ur_name) %>%
+  summarise(n = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "urban_rural.csv")
+
+age_sex <-
+  demog %>%
+  group_by(age_band) %>%
+  summarise(n_women = sum(sex == "F"),
+            n_men = sum(sex == "M"),
+            total = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "age_sex.csv")
+
+simd_sex <-
+  demog %>% 
+  group_by(simd_quintile) %>%
+  summarise(n_women = sum(sex == "F"),
+            n_men = sum(sex == "M"),
+            total = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "simd_sex.csv")
+
+simd_age <-
+  demog %>%
+  group_by(age_band) %>%
+  summarise(simd_1 = sum(simd_quintile == 1, na.rm = T),
+            simd_2 = sum(simd_quintile == 2, na.rm = T),
+            simd_3 = sum(simd_quintile == 3, na.rm = T),
+            simd_4 = sum(simd_quintile == 4, na.rm = T),
+            simd_5 = sum(simd_quintile == 5, na.rm = T),
+            simd_na = sum(is.na(simd_quintile))) %>%
+  adorn_totals("row") %>%
+  write_csv(., "simd_age.csv")
+
+age_shielding_reason <-
+shielding_long %>%
+  group_by(age_band) %>%
+  summarise(
+    transplant = 
+      sum(shielding_group_description == "transplant"),
+    cancer = 
+      sum(shielding_group_description == "cancer"),
+    respiratory = 
+      sum(shielding_group_description == "respiratory"),
+    rare_disease = 
+      sum(shielding_group_description == "rare disease"),
+    immunosuppressants = 
+      sum(shielding_group_description == "immunosuppressants"),
+    other = 
+      sum(shielding_group_description == "other") + 
+      sum(shielding_group_description == "pregnant"),
+    total = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "age_shielding_reason.csv")
+
+simd_shielding_reason <-
+shielding_long %>%
+  group_by(simd_quintile) %>%
+  summarise(
+    transplant = 
+      sum(shielding_group_description == "transplant"),
+    cancer = 
+      sum(shielding_group_description == "cancer"),
+    respiratory = 
+      sum(shielding_group_description == "respiratory"),
+    rare_disease = 
+      sum(shielding_group_description == "rare disease"),
+    immunosuppressants = 
+      sum(shielding_group_description == "immunosuppressants"),
+    other = 
+      sum(shielding_group_description == "other") + 
+      sum(shielding_group_description == "pregnant"),
+    total = n()) %>%
+  adorn_totals("row") %>%
+  write_csv(., "simd_shielding_reason.csv")
+```
+
