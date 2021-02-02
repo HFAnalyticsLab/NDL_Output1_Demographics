@@ -37,7 +37,7 @@ This analysis relies on the following data sources, which have been accessed by 
 The repository contains the following folders:
 
 - **Analysis:** this contains markdown files with the R code used by each partner for their analys, starting with clean data to produce summary statistic tables on patient demographics.
-- **Outputs:** this contains the [Open Data release](https://github.com/HFAnalyticsLab/NDL_Output1_Demographics/blob/main/Outputs/Networked-Data-Lab-Characteristics-of-CEV-people-four-partners.xlsx) with the summary statistics produced by all partners (after applying statistical disclosure control methods).
+- **Outputs:** this contains the [Open Data release](https://github.com/HFAnalyticsLab/NDL_Output1_Demographics/blob/main/Outputs/Networked-Data-Lab-Characteristics-of-CEV-people-GitHub.xlsx) with the summary statistics produced by all partners (after applying statistical disclosure control methods).
 
 ### Requirements
 
