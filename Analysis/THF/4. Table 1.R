@@ -26,6 +26,10 @@ gitdir <- dirname(rstudioapi::getSourceEditorContext()$path)
 
 allpartners_clean <- fread(paste0(rawdatadir,"allpartners-demographics-clean.csv"), header=TRUE, sep=",", check.names=T)
 
+allpartners_clean %>%
+  filter(.,Partner=="Leeds"&Breakdown_Field=="reason_shielding")
+
+
 ######################################################
 ################### PRODUCE TABLE ####################
 ######################################################
@@ -34,7 +38,7 @@ detach(package:Rmisc)
 detach(package:plyr)
 
 allpartners_clean_table <- allpartners_clean %>%
-  filter(.,!(Partner %in% c("Scotland","ENGLAND"))) %>%
+  filter(.,!(Partner %in% c("Scotland","ENGLAND","Leeds"))) %>%
   filter(.,!(Breakdown_Value %in% c("0-29"))) %>%
   mutate(.,Breakdown_Value_small=fct_collapse(Breakdown_Value,
                                        "0-29" = c("0-19","20-29"),
@@ -52,7 +56,8 @@ allpartners_clean_table <- allpartners_clean %>%
     names_from = "Partner",
     names_sep = ".",
     values_from = c("Count","rate_all","n")
-  )
+  ) %>%
+  arrange(.,Breakdown_Field,Breakdown_Value_small)
 
 ####################################################
 ################### WRITE TABLE ####################
