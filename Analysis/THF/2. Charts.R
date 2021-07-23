@@ -96,6 +96,9 @@ pop_shielding_leeds_opendata <- SPL_by_CCG %>% filter(.,Breakdown.Field=="ALL"&(
   select(.,Patient.Count) %>% mutate(.,Patient.Count=as.numeric(Patient.Count)) %>% sum(.,na.rm=TRUE)
 pct_shielding_leeds <- pop_shielding_leeds_opendata/pop_leeds*100
 
+#Disease groups in Leeds
+SPL_by_CCG %>% filter(.,Breakdown.Field=="Disease Group"&(CCG.Name %in% "NHS Leeds CCG"))
+
   #UK
 pop_UK <- 66796807
 pop_shielding_UK <- 2633742
