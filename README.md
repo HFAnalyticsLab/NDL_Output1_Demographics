@@ -2,7 +2,7 @@
 
 # Networked Data Lab: Demographic variation across Britain among those advised to shield from COVID-19
 
-#### Project Status: In progess
+#### Project Status: Completed
 
 ## Project Description
 
